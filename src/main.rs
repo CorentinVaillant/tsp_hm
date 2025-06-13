@@ -1,4 +1,9 @@
-use crate::{reject_sampling_tsp::reject_sample_tsp, support_hm::hasting_met_tsp, support_math::Point, support_tsp::{distance_mat, total_length}};
+
+use std::{io::{stdout, Write}, time::Instant};
+
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
+use crate::test::compare_methods;
 
 mod reject_sampling_tsp;
 mod support_hm;
@@ -7,14 +12,25 @@ mod support_tsp;
 mod test;
 
 pub fn main(){
-    let towns:[Point;10] = core::array::from_fn(|_|(rand::random_range(-100.0..100.0),rand::random_range(-100.0..100.0)));
-    let distances = distance_mat(&towns);
+    const N:usize = 500;
+    let begin = Instant::now();
 
+    println!("-- Starting comparaison with {N} vertices --" );
+    print!("[");
+    let results:Vec<_> = (0..10).into_par_iter().map(|i|{
+        let i = i +10;
+        let iter = 2_u32.pow(i) as usize;
+        let result = (compare_methods::<N>(iter, 100, 0.01),i);
+        print!("{iter},");
+        let _ = stdout().flush();
+        result
+    }).collect();
+    println!("]");
 
-    let sol = hasting_met_tsp(distances, 1., 10_000);
+    for (r,i) in results{
+        println!("- [avg resuslt with 2^{i} iterations]  -> {r}");
+    }
 
-    println!("best solution hm : {:?}, |sol| = {}",sol, total_length(&sol, &distances));
-
-    let sol = reject_sample_tsp(distances, 10_000);
-    println!("best solution rs : {:?}, |sol| = {}",sol, total_length(&sol, &distances));
+    let time = Instant::now().duration_since(begin).as_secs_f64();
+    println!("\x07 => DONE took : {time}s")
 }

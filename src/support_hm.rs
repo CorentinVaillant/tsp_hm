@@ -1,13 +1,17 @@
+use rand::rngs::ThreadRng;
+use rand::seq::SliceRandom;
+
 use crate::support_tsp::{total_length, DistancesMat, Permutation};
 
 
 pub fn hasting_met_tsp<const N:usize>(distances:DistancesMat<N>,beta:f64, iteration:usize)->Permutation<N>{
+    let mut rng = rand::rng();
     let mut p_t = core::array::from_fn(|i|i);
     let mut best = p_t;
     let mut best_dist = total_length(&best, &distances);
 
     for _ in 0..iteration{
-        let p_prime = permute(p_t);
+        let p_prime = shuffle(p_t,&mut rng);
 
         let pi_pt = tsp_distribution(&p_t, &distances, beta);
         let pi_p = tsp_distribution(&p_prime, &distances, beta);
@@ -42,15 +46,8 @@ fn tsp_distribution<const N:usize>(tour:&Permutation<N>, distances:&DistancesMat
     f64::exp(-beta * total_length(tour, distances))
 }
 
-fn permute<const N:usize>(p:Permutation<N>)->Permutation<N>{
+fn shuffle<const N:usize>(p:Permutation<N>,rng: &mut ThreadRng)->Permutation<N>{
     let mut p = p;
-    let i = rand::random::<u32>() as usize %N;
-    let mut j = rand::random::<u32>() as usize %N;
-    while i == j {
-        j = rand::random::<u32>() as usize %N;
-    }
-
-    p.swap(i, j);
-
+    p.shuffle(rng);
     p
 }
