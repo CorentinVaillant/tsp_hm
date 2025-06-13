@@ -1,12 +1,9 @@
-use crate::support_tsp::total_length;
+use crate::support_tsp::{total_length, DistancesMat, Permutation};
 
 
-pub type Permutation<const N:usize> = [usize;N];
-pub type DistancesMat<const N:usize> = [[f64;N];N];
-
-pub fn hasting_met_tsp<const N:usize>(p0:Permutation<N>,distances:DistancesMat<N>,beta:f64, iteration:usize)->Permutation<N>{
-    let mut p_t = p0;
-    let mut best = p0;
+pub fn hasting_met_tsp<const N:usize>(distances:DistancesMat<N>,beta:f64, iteration:usize)->Permutation<N>{
+    let mut p_t = core::array::from_fn(|i|i);
+    let mut best = p_t;
     let mut best_dist = total_length(&best, &distances);
 
     for _ in 0..iteration{

@@ -1,5 +1,8 @@
-use crate::{support_hm::{DistancesMat, Permutation}, support_math::{ditsance_point, Point}};
+use crate::support_math::{ditsance_point, Point};
 
+
+pub type Permutation<const N:usize> = [usize;N];
+pub type DistancesMat<const N:usize> = [[f64;N];N];
 
 pub fn distance_mat<const N:usize>(coords:&[Point;N])->DistancesMat<N>{
     core::array::from_fn(|i|core::array::from_fn(|j|{
