@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use inline_colorization::{color_green, color_red, color_reset, color_yellow};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::{reject_sampling_tsp::reject_sample_tsp, support_hm::hasting_met_tsp, support_math::Point, support_tsp::{distance_mat, total_length}};
 
@@ -18,6 +18,8 @@ pub struct CompareResult{
     pub hm_dist :f64,
     pub rs_dist :f64,
 }
+
+//-- Two methods comparaison --
 
 pub fn compare_methods_once<const SIZE:usize>(iteration_per_func:usize,beta_hm:f64)->CompareResult{
     let towns:[Point;SIZE] = core::array::from_fn(|_|(rand::random_range(-100.0..100.0),rand::random_range(-100.0..100.0)));
@@ -94,4 +96,38 @@ impl std::fmt::Display for AvgCompareResult {
         writeln!(f,"\t average distance : {}",self.avg_dist_between_methods)?;
         writeln!(f,"}}")
     }
+}
+
+//-- beta comparaison --
+
+pub type BetaComparaisonResult = f64;
+
+
+pub fn compare_beta_hm_tsp<const SIZE: usize>(iterations:&[usize], betas:&[f64]) -> Vec<Vec<BetaComparaisonResult>>{
+    let towns:[Point;SIZE] = core::array::from_fn(|_|(rand::random_range(-100.0..100.0),rand::random_range(-100.0..100.0)));
+    let distances = distance_mat(&towns);
+
+    let results = Arc::new(Mutex::new(Vec::with_capacity(iterations.len())));
+
+    iterations.par_iter().for_each(|i|{
+
+        let mut result : Vec<_> = betas.par_iter().map(|b|{
+
+        let result  = hasting_met_tsp(distances, *b, *i);
+        
+        total_length(&result,&distances) 
+        
+    }).collect();
+    result.sort_by(|r1,r2|r1.partial_cmp(r2).unwrap_or(std::cmp::Ordering::Equal));
+    results.clone().lock().unwrap().push(result);
+    });
+
+    let results = Arc::try_unwrap(results)
+    .expect("Arc has multiple strong references")
+    .into_inner()
+    .expect("Mutex cannot be locked");
+    
+    results 
+
+
 }
