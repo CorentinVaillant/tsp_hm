@@ -9,7 +9,7 @@ use crate::{reject_sampling_tsp::reject_sample_tsp, support_hm::hasting_met_tsp,
 pub enum Method{
     HastingMetropolis,
     RejectSampling,
-    Both
+    Tie
 }
 
 #[derive(Debug,Clone, Copy)]
@@ -36,7 +36,7 @@ pub fn compare_methods_once<const SIZE:usize>(iteration_per_func:usize,beta_hm:f
         Method::HastingMetropolis
     }else if hm_dist > rs_dist{
         Method::RejectSampling
-    }else {Method::Both};
+    }else {Method::Tie};
 
     CompareResult { best_method, hm_dist, rs_dist}
 }
@@ -89,7 +89,7 @@ impl std::fmt::Display for AvgCompareResult {
         let color = match self.best_method {
             Method::HastingMetropolis => color_green,
             Method::RejectSampling => color_red,
-            Method::Both => color_yellow,
+            Method::Tie => color_yellow,
         };
         writeln!(f,"\t best :{color} {:?} {color_reset}",self.best_method)?;
 

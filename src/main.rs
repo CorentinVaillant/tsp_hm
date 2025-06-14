@@ -10,7 +10,7 @@ mod support_math;
 mod support_tsp;
 mod test;
 
-const SIZE:usize = 100;
+const SIZE:usize = 500;
 
 pub fn main()->Result<(),String>{
     
@@ -24,7 +24,7 @@ Choose an option :
     let option = input_options(msg, &[1,2,3])?;
     let begin = Instant::now();
     match option{
-        1 => compare_results(),
+        1 => generate_csv_compare_results().map_err(|e|e.to_string())?,
         2 => generate_csv_comparaison().map_err(|e|e.to_string())?,
         3 => generate_csv_beta_comparaison().map_err(|e|e.to_string())?,
         _ => unreachable!()
@@ -66,7 +66,7 @@ fn generate_csv_comparaison()->Result<(),Box<dyn Error>>{
 
 
     let part = 4;
-    let range = 0.01..2.0;
+    let range = 0.01..1.0;
     let betas:Vec<_> = (0..part).map(|i|range.start + i as f64*(range.end-range.start)/(part as f64) ).collect();
 
     let results:Vec<_> = betas.par_iter().map(|beta|{
@@ -99,8 +99,7 @@ fn generate_csv_comparaison()->Result<(),Box<dyn Error>>{
 
 }
 
-fn compare_results(){
-    println!("-- Starting comparaison with {SIZE} vertices --" );
+fn generate_csv_compare_results()->Result<(),Box<dyn Error>>{
     print!("[");
     let results:Vec<_> = (0..10).into_par_iter().map(|i|{
         let i = i +10;
@@ -112,9 +111,27 @@ fn compare_results(){
     }).collect();
     println!("]");
 
-    for (r,i) in results{
-        println!("- [avg resuslt with 2^{i} iterations]  -> {r}");
-    }
+    let mut wtr = csv::Writer::from_path("./results_comparaison.csv").map_err(Box::new)?;
+    
+    let iterations:Vec<_> = results.iter().map(|(_,i)|format!("2^{i}")).collect();
+    wtr.write_field("nombre d'itérations")?;
+    wtr.write_record(iterations)?;
+
+    let best:Vec<_> = results.iter().map(|(r,_)|match r.best_method{
+        test::Method::HastingMetropolis => "Hasting Metropolis",
+        test::Method::RejectSampling => "Rejet",
+        test::Method::Tie => "Tie",
+    }).collect();
+    wtr.write_field("Gagnant")?;
+    wtr.write_record(best)?;
+
+    let avg_length:Vec<_> = results.iter().map(|(r,_)|r.avg_dist_between_methods.to_string()).collect();
+    wtr.write_field("Longueur moyenne trouvé")?;
+    wtr.write_record(avg_length)?;
+
+    wtr.flush()?;
+
+    Ok(())
 }
 
 fn input_options<T:FromStr + PartialEq>(msg:&str, options:&[T])->Result<T,String>{
