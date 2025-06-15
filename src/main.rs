@@ -102,7 +102,7 @@ fn generate_csv_comparaison()->Result<(),Box<dyn Error>>{
 fn generate_csv_compare_results()->Result<(),Box<dyn Error>>{
     print!("[");
     let results:Vec<_> = (0..10).into_par_iter().map(|i|{
-        let i = i +10;
+        let i = i +7;
         let iter = 2_u32.pow(i) as usize;
         let result = (compare_methods::<SIZE>(iter, 100, 0.01),i);
         print!("{iter},");
